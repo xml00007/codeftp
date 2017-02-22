@@ -75,11 +75,9 @@ function upload(localpath, next) {
         // 在所有文件的异步执行结束后将被执行
         // 所有文件的内容都存在list数组中
 
-
-
-        next();
+        console.log('all files up loaded');
     });
-    op.on('uperror', function () {
+    ep.on('uperror', function () {
 
     })
     c.on('ready', function () {
@@ -124,4 +122,4 @@ var ftp = {
 };
 // module.exports = ftp;
 // download(['/shaoshuai/KM.test.mai.fang.com/Views/AskAddBase.cshtml','/shaoshuai/KM.test.mai.fang.com/Views/AskAddMore.cshtml'], 'Km');
-upload(['D:\\测试站\\Ds优惠券\\GMSite\\Views\\123123123.cshtml', 'D:\\测试站\\Ds优惠券\\KMSite\\Views\\123123123.cshtml'])
+// upload(['D:\\测试站\\Ds优惠券\\GMSite\\Views\\123123123.cshtml', 'D:\\测试站\\Ds优惠券\\KMSite\\Views\\123123123.cshtml'])

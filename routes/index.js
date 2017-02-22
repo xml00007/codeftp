@@ -4,6 +4,7 @@ var eventproxy=require('eventproxy');
 var exec = require('child_process').exec;
 var config = require('../config');
 var fs = require('fs');
+var ftp = require('../Common/ftp');
 /* GET home page. */
 router.get('/', function(req, res, next) {
   res.render('Index', { title: 'Express' ,aasd:'11',error:'0'});
@@ -22,7 +23,7 @@ router.post('/Upload', function(req, res, next) {
     if(url==''){
         ep.emit('error1','请补充完整的路径')
     }
-    var reg1=/\\(FMSite|GMSite|KMSite)\\(.*?)\.(css|js|cs|cshtml)/ig;
+    var reg1=/\\(FMSite|GMSite|KMSite|Entity|DataAccess)\\(.*?)\.(css|js|cs|cshtml)/ig;
     var urls=url.split('\n')
     var righturl=[];
     var data={
@@ -32,12 +33,13 @@ router.post('/Upload', function(req, res, next) {
     }
     urls.forEach(function (ele) {
         if(ele.match(reg1)){
+            if(ele.toLowerCase().indexOf('contro'))
             righturl.push(config.address+RegExp.$1+'\\'+RegExp.$2+'.'+RegExp.$3);
         }else{
             ep.emit('error1',ele+'路径不合法')
         }
     })
-
+    console.log(righturl);
     righturl.forEach(function (ele) {
         // 需要先判断本地是否存在该文件
         if(!fs.existsSync(ele)){
@@ -84,10 +86,17 @@ router.post('/Upload', function(req, res, next) {
                 });
             })
         }
-    }
-    )
+    });
     //  检测是否有需要编译的文件  如果有进行编译
+    compileFiles();
 
+
+    // 备份文件
+    downloadFiles(righturl);
+    // ftp.download()
+
+
+    // 上传文件
     res.render('Index', { title: 'Express' ,aasd:'success',error: 'success'});
 });
 
@@ -105,7 +114,6 @@ function compileFiles() {
 var order=' devnev '+config.address+config.projname+' /rebuild Release'
     exec(order,function (err,d1,d2) {
         if(err) emit('error1','重新生成解决方案失败，失败原因'+d1+'----'+d2)
-        downCopy()
     });
 }
 
@@ -114,7 +122,25 @@ function uploadFiles() {
 
 }
 //  备份服务器上的文件到本地
-function downCopy() {
+function downloadFiles(urls) {
+    // 准备需要下载的文件名
+}
+
+
+function ready(urls) {
+    if(urls.length==0)  return;
+    var obj={}; var returnurl=[];
+    var reg=/\\(FMSite|GMSite|KMSite|Entity|DataAccess)\\(.*?)\.cs/ig;
+    urls.forEach(function (url) {
+        if(url.match(reg)){
+            obj[RegExp.$1]=true;
+        }else{
+            returnurl.push(url);
+        }
+    });
+    Object.keys(obj).forEach(function (key) {
+        returnurl.push()
+    })
 
 }
 module.exports = router;

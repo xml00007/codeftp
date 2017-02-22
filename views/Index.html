@@ -8,10 +8,21 @@
 <body>
 <form action="/Upload" method="post">
     <textarea name="conturl" id="conturl" cols="200" rows="30"></textarea>
-    <input type="submit" value="提交">
+    <input id="btn"  type="button" value="提交">
 
 </form>
 <input type="text"  value="<%= aasd %>">
 <input type="text" value="<%= error%>">
 </body>
+<script>
+    $(function () {
+        $('#btn').click(function () {
+            var content=$('#conturl').val().trim();
+            if(!content){
+                var reg=/\\(DataAccess|Entity|KMSite|GMSite|FMSite)/igm;
+                document.
+            }
+        })
+    })
+</script>
 </html>
