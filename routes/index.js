@@ -106,6 +106,7 @@ function child_p (err,data1,data2) {
         console.log(err)
     }
     console.log(data1+"----"+data2)
+    
 }
 
 

@@ -4,25 +4,64 @@
     <meta charset="UTF-8">
     <title>上传文件</title>
     <link rel="stylesheet" href="/public/stylesheets/style.css">
+    <link rel="stylesheet" href="/public/stylesheets/tanchu.css">
 </head>
 <body>
 <form action="/Upload" method="post">
     <textarea name="conturl" id="conturl" cols="200" rows="30"></textarea>
-    <input id="btn"  type="button" value="提交">
+    <input type="hidden" id="projname" name="projname" value="">
+    <input id="btn" type="button" value="提交">
 
 </form>
-<input type="text"  value="<%= aasd %>">
+<input type="text" value="<%= aasd %>">
 <input type="text" value="<%= error%>">
+
 </body>
+<script type="text/javascript" src="/public/javascripts/jquery-3.1.1.js"></script>
 <script>
     $(function () {
         $('#btn').click(function () {
-            var content=$('#conturl').val().trim();
-            if(!content){
-                var reg=/\\(DataAccess|Entity|KMSite|GMSite|FMSite)/igm;
-                document.
+            var content = $('#conturl').val().trim().split('\n');
+            if (content.length == 0) {
+                alert('请输入合法的路径')
             }
+            var reg = /\\(DataAccess|Entity|KMSite|GMSite|FMSite)(.*?)\.cs$/i;
+            var bin1 = [], bin2 = [],bin=[];
+            content.forEach(function (ele) {
+                if (ele.match(reg)) {
+                    var matchurl = RegExp.$1;
+                    if (matchurl.match(/(KMSite|GMSite|FMSite)/)) {
+                        if (bin1.indexOf(matchurl) == -1) {
+                            bin1.push(matchurl)
+                        }
+                    } else {
+                        bin2.push(matchurl)
+                    }
+                }
+            });
+            if (bin1.length==0) {
+                if (bin2.length>0) {
+                    $('#modal-8').addClass('md-show')
+                    var proj= prompt("编译后的文件需要上传到哪个项目？")
+                    bin2.forEach(function (ele) {
+                        bin.push(proj+'-'+ele)
+                    })
+                }
+            }else{
+                if (bin2.length==0) {
+                    bin1.forEach(function (ele) {
+                        bin.push(proj+'-'+ele)
+                    })
+                }else{
+
+                }
+            }
+            console.log(bin1 + '222222' + bin2)
         })
     })
+
+    function  close() {
+        $('#modal-8').removeClass('md-show')
+    }
 </script>
 </html>
