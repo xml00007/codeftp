@@ -1,6 +1,5 @@
 var Client = require('ftp');
 var config = require('../config');
-var c = new Client();
 var path = require('path');
 var fs = require('fs');
 var exec = require('child_process').exec;
@@ -11,7 +10,10 @@ var conn = {
     host: config.ftpIp,
     user: config.ftpUser,
     password: config.ftpPwd,
-    port: config.ftpPort
+    port: config.ftpPort,
+    pasvTimeout:1000000,
+    keepalive:100000,
+    connTimeout:150000
 };
 // c.on('ready', function() {
 //     c.list(function(err, list) {
@@ -23,52 +25,77 @@ var conn = {
 // connect to localhost:21 as anonymous
 
 //  备份文件
-function download(serverpath) {
-    if (serverpath.length == 0) return false;
-    var isexist = {};
-    c.on('ready', function () {
-        serverpath.forEach(function (spath) {
-            var filename = path.basename(spath);
-            var pattern = new RegExp("[`~!@#$^&*()=|{}':;',\\[\\].<>/?~！@#￥……&*（）——|{}【】‘；：”“'。，、？]");
-            filename = path.dirname(spath).split('/').join('_').concat('_', filename).replace(pattern, "_");
-            var projname = spath.match(/(km|gm|fm)/i)[0];
-            var dirname = path.join(config.copyPath, projname, tool.format("YYYY-MM-DD"), tool.format("hh-mm"), '\\');
-            console.log(filename);
-            if (!isexist.hasOwnProperty(projname) || isexist[projname] == false) {
-                console.log(1);
-                fse.ensureDir(dirname, function (err) {
-                    if (err) console.log(err); // => null
-                    isexist[projname] = true;
-                })
+function download(req, res, next) {
+    var c = new Client();
+    var serverpath = req.compileurls.concat(req.staticurl);
+    var proj = req.body.proj;
+    if (serverpath.length == 0)  return next();
+    var ep = new EventProxy();
+    ep.fail(next);
+    c.on('error', function (e) {
+        console.log(e.toString())
+        ep.emit('error', e);
+    });
+    ep.after('got_files', serverpath.length, function (list) {
+
+        next(null, list);
+    });
+    var g=0;
+
+    ep.on('downsingle', function (dirname, filename, spath) {
+        g++;
+        console.log(g);
+        try{
+        c.get(spath, function (err, stream) {
+            console.log(g);
+            if (err) {
+                console.log(err.toString());
+                // return next(err);
             }
-            console.log(dirname);
-            c.get(spath, function (err, stream) {
-                if (err) throw err;
-                stream.once('close', function () {
-                    c.end();
-                });
-                //之前的代码
-                // 建立要备份的当天目录
-                // if(!fs.existsSync(dirname)){
-                //     fs.mkdir(dirname,function (err) {
-                //         if(err) console.log('创建目录错误'+'-----'+err);
-                //         // 由于一天可以上传多次 建立时分目录
-                //         stream.pipe(fs.createWriteStream(path.join(dirname,filename)));
-                //     })
-                // }else  {
-                //     stream.pipe(fs.createWriteStream(path.join(dirname,filename)));
-                // }
-                stream.pipe(fs.createWriteStream(path.join(dirname, filename)));
-                console.log('done:' + dirname);
+            stream.once('close', function () {
+                c.end();
+                console.log('close :' + filename);
+                ep.emit('got_files', filename);
+            });
+
+            // stream.on('end', function () {
+            //
+            //     console.log('end');
+            // });
+
+            stream.pipe(fs.createWriteStream(path.join(dirname, filename)));
+            console.log('done:' + filename);
+        })}
+        catch(ex){
+            console.log(ex.toString())
+        }
+    });
+
+    var dirname = path.join(config.copyPath, proj, tool.format("YYYY-MM-DD"), tool.format("hh-mm"), '\\');
+    fse.ensureDir(dirname, function (err) {
+        if (err) return next(err); // => null
+        c.on('ready', function () {
+            var i=0;
+            serverpath.forEach(function (spath) {
+                i++;
+                var filename = path.basename(spath);
+                var pattern = new RegExp("[`~!@#$^&*()=|{}':;',\\[\\].<>/?~！@#￥……&*（）——|{}【】‘；：”“'。，、？]");
+                filename = path.dirname(spath).split('/').join('_').concat('_', filename).replace(pattern, "_");
+                console.log("begin :" + filename);
+                setTimeout(function () {
+                    console.log(i);
+                    ep.emit('downsingle', dirname, filename, spath);
+                },i==1?0:200);
             });
         });
-    })
-
-    c.connect(conn);
+        c.connect(conn);
+    });
 }
+
 
 function upload(localpath, next) {
     if (localpath.length == 0) return false;
+    var c = new Client();
     var ep = new EventProxy();
     ep.fail(next);
     ep.after('upfile', localpath.length, function (list) {
@@ -120,6 +147,6 @@ var ftp = {
     download: download,
     upload: upload
 };
-// module.exports = ftp;
+module.exports = ftp;
 // download(['/shaoshuai/KM.test.mai.fang.com/Views/AskAddBase.cshtml','/shaoshuai/KM.test.mai.fang.com/Views/AskAddMore.cshtml'], 'Km');
 // upload(['D:\\测试站\\Ds优惠券\\GMSite\\Views\\123123123.cshtml', 'D:\\测试站\\Ds优惠券\\KMSite\\Views\\123123123.cshtml'])

@@ -1,7 +1,8 @@
-// var fs = require('fs');
-// fs.mkdir('D:\\11222',function (err,d1) {
-//     console.log(err+'11111'+d1)
-// });
+for(var i=1;i<=5;i++){
+    (function () {
+        setTimeout(function () {
+            console.log(i+'---')
+        },2000)
 
-var data=new Date();
-console.log(Date.now())
+    })()
+}

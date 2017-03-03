@@ -4,13 +4,16 @@
     <meta charset="UTF-8">
     <title>上传文件</title>
     <link rel="stylesheet" href="/public/stylesheets/style.css">
-    <link rel="stylesheet" href="/public/stylesheets/tanchu.css">
 </head>
 <body>
-<form action="/Upload" method="post">
+<form action="/Upload" method="post" id="formdata">
+    <input type="radio" name="proj" id="proj1" value="GMSite"><label for="proj1">GM</label>
+    <input type="radio" name="proj" id="proj2" value="KMSite"><label for="proj2">KM</label>
+    <input type="radio" name="proj" id="proj3" value="FMSite"><label for="proj3">FM</label>
     <textarea name="conturl" id="conturl" cols="200" rows="30"></textarea>
-    <input type="hidden" id="projname" name="projname" value="">
+    <input type="hidden" id="projbin" name="projbin" value="">
     <input id="btn" type="button" value="提交">
+    <input type="button" value="Test" id="test">
 
 </form>
 <input type="text" value="<%= aasd %>">
@@ -18,50 +21,75 @@
 
 </body>
 <script type="text/javascript" src="/public/javascripts/jquery-3.1.1.js"></script>
+<script src="/socket.io/socket.io.js" type="text/javascript"></script>
+<script>
+    var socket=io.connect('http://127.0.0.1:4000');
+    $(function () {
+        $('#test').click(function () {
+            socket.emit('change',function (data) {
+                console.log(data);
+            })
+        })
+        socket.on('state',function (data) {
+            console.log(data);
+        })
+    });
+
+</script>
 <script>
     $(function () {
         $('#btn').click(function () {
+           var proj=$("input[name='proj']:checked").val();
+            if (!proj) {
+                alert("请选中要上传的项目名");
+                return false;
+            }
             var content = $('#conturl').val().trim().split('\n');
+            content=quChong(content);
             if (content.length == 0) {
                 alert('请输入合法的路径')
             }
-            var reg = /\\(DataAccess|Entity|KMSite|GMSite|FMSite)(.*?)\.cs$/i;
-            var bin1 = [], bin2 = [],bin=[];
+            var reg = /(DataAccess|Entity|KMSite|GMSite|FMSite)(.*?)\.cs$/i;
+            var bin1 = [],  //  本次需要编译的文件
+                other = [],  //  非本项目需要编译的文件
+                bin=[];
             content.forEach(function (ele) {
-                if (ele.match(reg)) {
-                    var matchurl = RegExp.$1;
-                    if (matchurl.match(/(KMSite|GMSite|FMSite)/)) {
-                        if (bin1.indexOf(matchurl) == -1) {
-                            bin1.push(matchurl)
-                        }
-                    } else {
-                        bin2.push(matchurl)
+                var matches=ele.match(reg);
+                if (matches) {
+                    if (matches[1]==proj) {
+                            bin1.push(matches[2])
+                    }
+                    else if(matches[1]=="DataAccess"||matches[1]=="Entity"){
+                        bin1.push(matches[0])
+                    }else {
+                        other.push(matches[0])
                     }
                 }
             });
-            if (bin1.length==0) {
-                if (bin2.length>0) {
-                    $('#modal-8').addClass('md-show')
-                    var proj= prompt("编译后的文件需要上传到哪个项目？")
-                    bin2.forEach(function (ele) {
-                        bin.push(proj+'-'+ele)
-                    })
-                }
-            }else{
-                if (bin2.length==0) {
-                    bin1.forEach(function (ele1) {
-                        bin.push(proj+'-'+ele1)
-                    })
-                }else{
-
+            bin1=quChong(bin1);// 去除重复元素
+            if(other.length>0){
+               var isgoon= confirm("以下文件:\r"+other.join('\n')+"\r不属于本次上传的项目,是否要继续上传？")
+                if (!isgoon) {
+                    return false;
                 }
             }
-            console.log(bin1 + '222222' + bin2)
+            bin1.forEach(function (ele) {
+                console.log(ele);
+            })
+            $('#projbin').val(bin1.join('-'));
+            $('#formdata').submit();
         })
-    })
+    });
 
-    function  close() {
-        $('#modal-8').removeClass('md-show')
+    function  quChong(arry) {
+        var r=[];
+        arry.forEach(function (ele) {
+            if (r.indexOf(ele)==-1) {
+                r.push(ele)
+            }
+        });
+        return r;
     }
 </script>
+
 </html>

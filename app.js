@@ -7,6 +7,7 @@ var bodyParser = require('body-parser');
 var config = require('./config');
 var routes = require('./routes/index');
 var users = require('./routes/users');
+var soc=require('./lib/socket')
 
 var app = express();
 
@@ -59,12 +60,15 @@ app.use(function(err, req, res, next) {
 });
 
 if (!module.parent) {
-    app.listen(config.port, function () {
+    var server = require('http').createServer(app);
+    server.listen(config.port, function () {
         // logger.info('NodeClub listening on port', config.port);
         // logger.info('God bless love....');
         // logger.info('You can debug your app with http://' + config.hostname + ':' + config.port);
         // logger.info('');
+        console.log("Server listen on port " +config.port);
     });
+    soc.listen(server);
 }
 
 module.exports = app;
