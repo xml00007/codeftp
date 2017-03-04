@@ -10,8 +10,12 @@
     "cookie-parser": "~1.4.3",
     "debug": "~2.2.0",
     "express": "~4.13.4",
+    "ftps": "^1.1.0",
     "jade": "~1.11.0",
+    "lodash": "^4.17.4",
+    "log4js": "^1.1.1",
     "morgan": "~1.7.0",
+    "redis": "^2.6.5",
     "serve-favicon": "~2.3.0"
   }
 }

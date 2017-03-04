@@ -40,7 +40,7 @@ exports.judge = function (req, res, next) {
     req.compileurls=tools.quchong(compileurl);
     req.staticurl=getstaticurl(req.righturl,proj);
     next();
-}
+};
 
 
 function getstaticurl(urls,proj) {

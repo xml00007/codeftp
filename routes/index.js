@@ -9,7 +9,11 @@ var ftp = require('../Common/ftp');
 var judge = require('../middlewares/judge').judge;
 var iconv = require('iconv-lite');
 var processfile = require('../Common/processfile');
-var io = require('../lib/socket');
+var fse = require('fs-extra');
+var tool = require('../Common/tools');
+var path = require('path');
+var cache=require('../Common/cache');
+
 /* GET home page. */
 router.get('/', function (req, res, next) {
     res.render('Index', {title: 'Express', aasd: '11', error: '0'});
@@ -17,17 +21,11 @@ router.get('/', function (req, res, next) {
 
 
 router.post('/Upload', judge, function (req, res, next) {
-    // io.sockets.emit('state', 112312);
     var ep = new eventproxy();
     ep.fail(next);
     ep.on('error1', function (msg) {
         res.status(422);
         res.render('Index', {error: msg, aasd: '33'});
-    });
-    ep.tail('state', function (state) {
-        // 在所有指定的事件触发后，将会被调用执行
-        // 参数对应各自的事件名的最新数据
-        io.sockets.emit('state', state);
     });
     var data = {
         GMSite: [],
@@ -51,7 +49,8 @@ router.post('/Upload', judge, function (req, res, next) {
         if (err) {
             return next(err);
         }
-        data = '修改工程文件已完成:' + data.join('\n')
+        data = '修改工程文件已完成:' + data.join('\n');
+        cache.set('step1',data);
         console.log(data);
         ep.emit('state', data);
         // 检测是否有需要编译的文件  如果有进行编译
@@ -59,25 +58,26 @@ router.post('/Upload', judge, function (req, res, next) {
             if (err) {
                 return next(err);
             }
-            ep.emit('state', data);
+            // ep.emit('state', data);
+            cache.set('step2',data);
             console.log(data);
-            // ftpStream(req,res,function () {
-            //     console.log('done')
-            // })
+
             // 备份文件
             ftp.download(req, res, function (err, data) {
                 if (err) {
                     return next(err);
                 }
-                ep.emit('state', '备份完成完成');
-                // 上传文件
-                // ftp.upload(req, res, function (err, data) {
-                //     if (err) {
-                //         return next(err);
-                //     }
-                //     res.render('Index', {title: 'Express', aasd: 'success', error: 'success'});
-                // });
-
+                console.log(data);
+                cache.set('step3',data);
+                //上传文件
+                ftp.upload(req, res, function (err, data) {
+                    if (err) {
+                        return next(err);
+                    }
+                    cache.set('step4',data);
+                    // res.render('Index', {title: 'Express', aasd: 'success', error: 'success'});
+                    res.json( {'a':1,'b':2,'success':100});
+                });
             });
         });
     });

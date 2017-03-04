@@ -75,11 +75,29 @@
             }
             bin1.forEach(function (ele) {
                 console.log(ele);
-            })
+            });
+            socket.emit('upload','begin');
             $('#projbin').val(bin1.join('-'));
-            $('#formdata').submit();
+//            $('#formdata').submit();
+
+            $.ajax({
+                url:"/Upload",//提交地址
+                data:$("#formdata").serialize(),//将表单数据序列化
+                type:"POST",
+                dataType:"json",
+                success:function(result){
+                    if (result.success == '100'){
+                        console.log('上传成功');
+                    }else{
+                        console.log('失败');
+                    }
+                }
+            });
         })
+
     });
+
+
 
     function  quChong(arry) {
         var r=[];
