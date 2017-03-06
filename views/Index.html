@@ -7,20 +7,37 @@
 </head>
 <body>
 <form action="/Upload" method="post" id="formdata">
+    <div>
     <input type="radio" name="proj" id="proj1" value="GMSite"><label for="proj1">GM</label>
     <input type="radio" name="proj" id="proj2" value="KMSite"><label for="proj2">KM</label>
     <input type="radio" name="proj" id="proj3" value="FMSite"><label for="proj3">FM</label>
-    <textarea name="conturl" id="conturl" cols="200" rows="30"></textarea>
+    </div>
+    <textarea name="conturl" id="conturl" cols="80" rows="30"></textarea>
     <input type="hidden" id="projbin" name="projbin" value="">
     <input id="btn" type="button" value="提交">
     <input type="button" value="Test" id="test">
 
 </form>
-<input type="text" value="<%= aasd %>">
-<input type="text" value="<%= error%>">
+<div id="container"  style="display: none">
+    <div class="content">
+        <h1 id="processtitle">处理中...</h1>
+    </div>
+    <!-- Progress bar -->
+    <div id="progress_bar" class="ui-progress-bar ui-container">
+        <div class="ui-progress" style="width: 0%;">
+            <span class="ui-label" style="display:none;">正在加载...<b class="value">0%</b></span>
+        </div>
+    </div>
+    <!-- /Progress bar -->
+    <div class="content" id="main_content" style="display: block;">
+    </div>
+</div>
+<!--<input type="text" value="<%= aasd %>">-->
+<!--<input type="text" value="<%= error%>">-->
 
 </body>
 <script type="text/javascript" src="/public/javascripts/jquery-3.1.1.js"></script>
+<script type="text/javascript" src="/public/javascripts/progress.js"></script>
 <script src="/socket.io/socket.io.js" type="text/javascript"></script>
 <script>
     var socket=io.connect('http://127.0.0.1:4000');
@@ -29,10 +46,12 @@
             socket.emit('change',function (data) {
                 console.log(data);
             })
-        })
+        });
+        var p='<p>{0}</p>',i=1;
         socket.on('state',function (data) {
-            console.log(data);
-        })
+            data=p.replace('{0}',data);
+            setprogress(i*25,data);
+        });
     });
 
 </script>
@@ -51,8 +70,7 @@
             }
             var reg = /(DataAccess|Entity|KMSite|GMSite|FMSite)(.*?)\.cs$/i;
             var bin1 = [],  //  本次需要编译的文件
-                other = [],  //  非本项目需要编译的文件
-                bin=[];
+                other = [];  //  非本项目需要编译的文件
             content.forEach(function (ele) {
                 var matches=ele.match(reg);
                 if (matches) {
@@ -73,24 +91,19 @@
                     return false;
                 }
             }
-            bin1.forEach(function (ele) {
-                console.log(ele);
-            });
             socket.emit('upload','begin');
             $('#projbin').val(bin1.join('-'));
-//            $('#formdata').submit();
-
+            $('#container').css('display','block');
+            setprogress(0);
             $.ajax({
                 url:"/Upload",//提交地址
                 data:$("#formdata").serialize(),//将表单数据序列化
                 type:"POST",
                 dataType:"json",
                 success:function(result){
-                    if (result.success == '100'){
-                        console.log('上传成功');
-                    }else{
-                        console.log('失败');
-                    }
+                    var data=result.success == '100'?'上传成功':'上传出错，请重试';
+                    $('#processtitle').html('处理成功');
+                    setprogress(100,data);
                 }
             });
         })
@@ -108,6 +121,12 @@
         });
         return r;
     }
-</script>
 
+    function setprogress(num,data) {
+        $('#progress_bar .ui-progress').animateProgress(num);
+        if (data) {
+            $('#main_content').append(data);
+        }
+    }
+</script>
 </html>
