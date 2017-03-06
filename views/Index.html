@@ -15,8 +15,6 @@
     <textarea name="conturl" id="conturl" cols="80" rows="30"></textarea>
     <input type="hidden" id="projbin" name="projbin" value="">
     <input id="btn" type="button" value="提交">
-    <input type="button" value="Test" id="test">
-
 </form>
 <div id="container"  style="display: none">
     <div class="content">
@@ -40,17 +38,13 @@
 <script type="text/javascript" src="/public/javascripts/progress.js"></script>
 <script src="/socket.io/socket.io.js" type="text/javascript"></script>
 <script>
-    var socket=io.connect('http://127.0.0.1:4000');
+    var socket=io.connect('http://10.2.80.191:4000');
     $(function () {
-        $('#test').click(function () {
-            socket.emit('change',function (data) {
-                console.log(data);
-            })
-        });
         var p='<p>{0}</p>',i=1;
         socket.on('state',function (data) {
             data=p.replace('{0}',data);
-            setprogress(i*25,data);
+            setprogress(i*20,data);
+            i++;
         });
     });
 
@@ -64,7 +58,7 @@
                 return false;
             }
             var content = $('#conturl').val().trim().split('\n');
-            content=quChong(content);
+            content=quchong(content);
             if (content.length == 0) {
                 alert('请输入合法的路径')
             }
@@ -84,26 +78,30 @@
                     }
                 }
             });
-            bin1=quChong(bin1);// 去除重复元素
+            bin1=quchong(bin1);// 去除重复元素
             if(other.length>0){
                var isgoon= confirm("以下文件:\r"+other.join('\n')+"\r不属于本次上传的项目,是否要继续上传？")
                 if (!isgoon) {
                     return false;
                 }
             }
-            socket.emit('upload','begin');
             $('#projbin').val(bin1.join('-'));
             $('#container').css('display','block');
-            setprogress(0);
+            reset();
             $.ajax({
                 url:"/Upload",//提交地址
                 data:$("#formdata").serialize(),//将表单数据序列化
                 type:"POST",
                 dataType:"json",
                 success:function(result){
+                    socket.emit('delkey');
                     var data=result.success == '100'?'上传成功':'上传出错，请重试';
                     $('#processtitle').html('处理成功');
                     setprogress(100,data);
+                },error:function (err) {
+                    reset();
+                    console.log(err);
+                    $('#processtitle').html('请求失败，请重试');
                 }
             });
         })
@@ -112,7 +110,7 @@
 
 
 
-    function  quChong(arry) {
+    function  quchong(arry) {
         var r=[];
         arry.forEach(function (ele) {
             if (r.indexOf(ele)==-1) {
@@ -125,8 +123,16 @@
     function setprogress(num,data) {
         $('#progress_bar .ui-progress').animateProgress(num);
         if (data) {
-            $('#main_content').append(data);
+            $('#main_content').append('<p>{0}</p>'.replace('{0}',data));
         }
+    }
+
+    function reset() {
+        i=0;
+        socket.emit('upload','begin');
+        setprogress(0);
+        $('#processtitle').html('处理中...');
+        $('#main_content').children().remove();
     }
 </script>
 </html>

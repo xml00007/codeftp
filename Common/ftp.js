@@ -129,7 +129,7 @@ function download(req, res, next) {
     var ep = new EventProxy();
     ep.fail(next);
     ep.after('singelfile',serverpath.length,function (list) {
-        var msg='文件:\n'+list.join('\n')+'下载完毕';
+        var msg='文件:\n\r'+list.join('\n')+'下载完毕';
         console.log(msg);
         next(null,msg)
     });
@@ -145,9 +145,7 @@ function download(req, res, next) {
                 }
                 ep.emit('singelfile',spath);
             });
-
         });
-
     });
 }
 

@@ -18,6 +18,12 @@ router.get('/', function (req, res, next) {
 
 
 router.post('/Upload', judge, function (req, res, next) {
+    var ep=new eventproxy();
+    ep.fail(next);
+    ep.after('update',req.righturl.length,function (list) {
+        cache.set('step0',{state:list.join('<br/>')});
+        ep.emit('goon');
+    });
     var data = {
         GMSite: [],
         KMSite: [],
@@ -32,52 +38,78 @@ router.post('/Upload', judge, function (req, res, next) {
             var key = ele.split('\\');
             data[key[3]].push(key.slice(3).join('\\'));
         }
-        execSync('svn update ' + ele, child_p);  // 存在则直接更新
+        exec('svn update ' + ele,{ encoding: 'binary'},ep.done('update',function (data) {
+            var data = iconv.decode(data, 'GBK')
+            return data;
+        }));  // 存在则直接更新
     });
     req.projdata = data;
-    //修改.csproj 文件
-    processfile.revisecsproj(req, res, function (err, data) {
-        if (err) {
-            return next(err);
-        }
-        data = '修改工程文件已完成:' + data.join('\n');
-        cache.set('step1',{data:data});
-        console.log(data);
-        //检测是否有需要编译的文件  如果有进行编译
-        processfile.compileFiles(req, res, function (err, data) {
+    ep.on('goon',function () {
+        //修改.csproj 文件
+        processfile.revisecsproj(req, res, function (err, data1) {
             if (err) {
                 return next(err);
             }
-            cache.set('step2',{data:data});
-            console.log(data);
-
-            // 备份文件
-            ftp.download(req, res, function (err, data) {
+            data = '修改工程文件已完成:' + data1.join('\n');
+            cache.set('step1',{state:data1});
+            //检测是否有需要编译的文件  如果有进行编译
+            processfile.compileFiles(req, res, function (err, data2) {
                 if (err) {
                     return next(err);
                 }
-                console.log(data);
-                cache.set('step3',{data:data});
-                //上传文件
-                ftp.upload(req, res, function (err, data) {
+                cache.set('step2',{state:data2});
+                // 备份文件
+                ftp.download(req, res, function (err, data3) {
                     if (err) {
                         return next(err);
                     }
-                    cache.set('step4',{data:data});
-                    res.json( {'a':1,'b':2,'success':100});
+                    cache.set('step3',{state:data3});
+                    //上传文件
+                    ftp.upload(req, res, function (err, data4) {
+                        if (err) {
+                            return next(err);
+                        }
+                        cache.set('step4',{state:data4});
+                        res.json( {'a':1,'b':2,'success':100});
+                    });
                 });
             });
         });
     });
+    //修改.csproj 文件
+    // processfile.revisecsproj(req, res, function (err, data1) {
+    //     if (err) {
+    //         return next(err);
+    //     }
+    //     data = '修改工程文件已完成:' + data1.join('\n');
+    //     cache.set('step1',{state:data1});
+    //     console.log(data1);
+    //     //检测是否有需要编译的文件  如果有进行编译
+    //     processfile.compileFiles(req, res, function (err, data2) {
+    //         if (err) {
+    //             return next(err);
+    //         }
+    //         cache.set('step2',{state:data2});
+    //         console.log(data2);
+    //
+    //         // 备份文件
+    //         ftp.download(req, res, function (err, data3) {
+    //             if (err) {
+    //                 return next(err);
+    //             }
+    //             console.log(data3);
+    //             cache.set('step3',{state:data3});
+    //             //上传文件
+    //             ftp.upload(req, res, function (err, data4) {
+    //                 if (err) {
+    //                     return next(err);
+    //                 }
+    //                 cache.set('step4',{state:data4});
+    //                 res.json( {'a':1,'b':2,'success':100});
+    //             });
+    //         });
+    //     });
+    // });
 });
-
-
-function child_p(err, data1, data2) {
-    if (err) {
-        console.log(err)
-    }
-    console.log(data1 + "----" + data2)
-}
-
 
 module.exports = router;

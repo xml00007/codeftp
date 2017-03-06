@@ -47,7 +47,7 @@ function getstaticurl(urls,proj) {
     var r=[];
     urls.forEach(function (ele) {
         if (ele.split('.')[1].toLowerCase()!='cs') {
-            var ad=ele.split('\\').slice(4).join('/');
+            var ad=ele.split('\\').slice(config.address.split('\\').length).join('/');
             //D:\测试站\Ds优惠券\GMSite\Views\CityList.cshtml
             r.push(config.serverPath+proj+'.test.mai.fang.com/'+ad);
         }

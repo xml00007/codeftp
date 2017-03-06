@@ -17,6 +17,6 @@ client.on('error', function (err) {
         // logger.error('connect to redis error, check your redis config', err);
         process.exit(1);
     }
-})
+});
 
 exports = module.exports = client;
